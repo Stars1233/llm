@@ -21,8 +21,7 @@ These plugins can be used to interact with remotely hosted models via their API:
 
 - **[llm-mistral](https://github.com/simonw/llm-mistral)** adds support for [Mistral AI](https://mistral.ai/)'s language and embedding models.
 - **[llm-gemini](https://github.com/simonw/llm-gemini)** adds support for Google's [Gemini](https://ai.google.dev/docs) models.
-- **[llm-claude](https://github.com/tomviner/llm-claude)** by Tom Viner adds support for Claude 2.1 and Claude Instant 2.1 by Anthropic.
-- **[llm-claude-3](https://github.com/simonw/llm-claude-3)** supports Anthropic's [Claude 3 family](https://www.anthropic.com/news/claude-3-family) of models.
+- **[llm-anthropic](https://github.com/simonw/llm-anthropic)** supports Anthropic's [Claude 3 family](https://www.anthropic.com/news/claude-3-family), [3.5 Sonnet](https://www.anthropic.com/news/claude-3-5-sonnet) and beyond.
 - **[llm-command-r](https://github.com/simonw/llm-command-r)** supports Cohere's Command R and [Command R Plus](https://txt.cohere.com/command-r-plus-microsoft-azure/) API models.
 - **[llm-reka](https://github.com/simonw/llm-reka)** supports the [Reka](https://www.reka.ai/) family of models via their API.
 - **[llm-perplexity](https://github.com/hex/llm-perplexity)** by Alexandru Geana supports the [Perplexity Labs](https://docs.perplexity.ai/) API models, including `llama-3-sonar-large-32k-online` which can search for things online and `llama-3-70b-instruct`.
@@ -34,10 +33,13 @@ These plugins can be used to interact with remotely hosted models via their API:
 - **[llm-palm](https://github.com/simonw/llm-palm)** adds support for Google's [PaLM 2 model](https://developers.generativeai.google/).
 - **[llm-openrouter](https://github.com/simonw/llm-openrouter)** provides access to models hosted on [OpenRouter](https://openrouter.ai/).
 - **[llm-cohere](https://github.com/Accudio/llm-cohere)** by Alistair Shepherd provides `cohere-generate` and `cohere-summarize` API models, powered by [Cohere](https://cohere.com/).
+- **[llm-bedrock](https://github.com/simonw/llm-bedrock)** adds support for Nova by Amazon via Amazon Bedrock.
 - **[llm-bedrock-anthropic](https://github.com/sblakey/llm-bedrock-anthropic)** by Sean Blakey adds support for Claude and Claude Instant by Anthropic via Amazon Bedrock.
 - **[llm-bedrock-meta](https://github.com/flabat/llm-bedrock-meta)** by Fabian Labat adds support for Llama 2 and Llama 3 by Meta via Amazon Bedrock.
 - **[llm-together](https://github.com/wearedevx/llm-together)** adds support for the [Together AI](https://www.together.ai/) extensive family of hosted openly licensed models.
+- **[llm-deepseek](https://github.com/abrasumente233/llm-deepseek)** adds support for the [DeepSeek](https://deepseek.com)'s DeepSeek-Chat and DeepSeek-Coder models.
 - **[llm-lambda-labs](https://github.com/simonw/llm-lambda-labs)** provides access to models hosted by [Lambda Labs](https://docs.lambdalabs.com/public-cloud/lambda-chat-api/), including the Nous Hermes 3 series.
+- **[llm-venice](https://github.com/ar-jan/llm-venice)** provides access to uncensored models hosted by privacy-focused [Venice AI](https://docs.venice.ai/), including Llama 3.1 405B.
 
 If an API model host provides an OpenAI-compatible API you can also [configure LLM to talk to it](https://llm.datasette.io/en/stable/other-models.html#openai-compatible-models) without needing an extra plugin.
 
@@ -53,6 +55,7 @@ If an API model host provides an OpenAI-compatible API you can also [configure L
 ## Extra commands
 
 - **[llm-cmd](https://github.com/simonw/llm-cmd)** accepts a prompt for a shell command, runs that prompt and populates the result in your shell so you can review it, edit it and then hit `<enter>` to execute or `ctrl+c` to cancel.
+- **[llm-cmd-comp](https://github.com/CGamesPlay/llm-cmd-comp)** provides a key binding for your shell that will launch a chat to build the command. When ready, hit `<enter>` and it will go right back into your shell command line, so you can run it.
 - **[llm-python](https://github.com/simonw/llm-python)** adds a `llm python` command for running a Python interpreter in the same virtual environment as LLM. This is useful for debugging, and also provides a convenient way to interact with the LLM {ref}`python-api` if you installed LLM using Homebrew or `pipx`.
 - **[llm-cluster](https://github.com/simonw/llm-cluster)** adds a `llm cluster` command for calculating clusters for a collection of embeddings. Calculated clusters can then be passed to a Large Language Model to generate a summary description.
 - **[llm-jq](https://github.com/simonw/llm-jq)** lets you pipe in JSON data and a prompt describing a `jq` program, then executes the generated program against the JSON.

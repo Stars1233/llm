@@ -71,6 +71,18 @@ response = model.prompt(
 ```
 Use `llm.Attachment(content=b"binary image content here")` to pass binary content directly.
 
+You can check which attachment types (if any) a model supports using the `model.attachment_types` set:
+
+```python
+model = llm.get_model("gpt-4o-mini")
+print(model.attachment_types)
+# {'image/gif', 'image/png', 'image/jpeg', 'image/webp'}
+
+if "image/jpeg" in model.attachment_types:
+    # Use a JPEG attachment here
+    ...
+```
+
 ### Model options
 
 For models that support options (view those with `llm models --options`) you can pass options as keyword arguments to the `.prompt()` method:
@@ -82,10 +94,10 @@ print(model.prompt("Names for otters", temperature=0.2))
 
 ### Models from plugins
 
-Any models you have installed as plugins will also be available through this mechanism, for example to use Anthropic's Claude 3.5 Sonnet model with [llm-claude-3](https://github.com/simonw/llm-claude-3):
+Any models you have installed as plugins will also be available through this mechanism, for example to use Anthropic's Claude 3.5 Sonnet model with [llm-anthropic](https://github.com/simonw/llm-anthropic):
 
 ```bash
-pip install llm-claude-3
+pip install llm-anthropic
 ```
 Then in your Python code:
 ```python
