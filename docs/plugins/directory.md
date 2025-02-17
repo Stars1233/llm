@@ -9,11 +9,12 @@ These plugins all help you run LLMs directly on your own computer:
 
 
 - **[llm-gguf](https://github.com/simonw/llm-gguf)** uses [llama.cpp](https://github.com/ggerganov/llama.cpp) to run models published in the GGUF format.
+- **[llm-mlx](https://github.com/simonw/llm-mlx)** (Mac only) uses Apple's MLX framework to provide extremely high performance access to a large number of local models.
+- **[llm-ollama](https://github.com/taketwo/llm-ollama)** adds support for local models run using [Ollama](https://ollama.ai/).
+- **[llm-llamafile](https://github.com/simonw/llm-llamafile)** adds support for local models that are running locally using [llamafile](https://github.com/Mozilla-Ocho/llamafile).
 - **[llm-mlc](https://github.com/simonw/llm-mlc)** can run local models released by the [MLC project](https://mlc.ai/mlc-llm/), including models that can take advantage of the GPU on Apple Silicon M1/M2 devices.
 - **[llm-gpt4all](https://github.com/simonw/llm-gpt4all)** adds support for various models released by the [GPT4All](https://gpt4all.io/) project that are optimized to run locally on your own machine. These models include versions of Vicuna, Orca, Falcon and MPT - here's [a full list of models](https://observablehq.com/@simonw/gpt4all-models).
 - **[llm-mpt30b](https://github.com/simonw/llm-mpt30b)** adds support for the [MPT-30B](https://huggingface.co/mosaicml/mpt-30b) local model.
-- **[llm-ollama](https://github.com/taketwo/llm-ollama)** adds support for local models run using [Ollama](https://ollama.ai/).
-- **[llm-llamafile](https://github.com/simonw/llm-llamafile)** adds support for local models that are running locally using [llamafile](https://github.com/Mozilla-Ocho/llamafile).
 
 ## Remote APIs
 
@@ -30,7 +31,6 @@ These plugins can be used to interact with remotely hosted models via their API:
 - **[llm-anyscale-endpoints](https://github.com/simonw/llm-anyscale-endpoints)** supports models hosted on the [Anyscale Endpoints](https://app.endpoints.anyscale.com/) platform, including Llama 2 70B.
 - **[llm-replicate](https://github.com/simonw/llm-replicate)** adds support for remote models hosted on [Replicate](https://replicate.com/), including Llama 2 from Meta AI.
 - **[llm-fireworks](https://github.com/simonw/llm-fireworks)** supports models hosted by [Fireworks AI](https://fireworks.ai/).
-- **[llm-palm](https://github.com/simonw/llm-palm)** adds support for Google's [PaLM 2 model](https://developers.generativeai.google/).
 - **[llm-openrouter](https://github.com/simonw/llm-openrouter)** provides access to models hosted on [OpenRouter](https://openrouter.ai/).
 - **[llm-cohere](https://github.com/Accudio/llm-cohere)** by Alistair Shepherd provides `cohere-generate` and `cohere-summarize` API models, powered by [Cohere](https://cohere.com/).
 - **[llm-bedrock](https://github.com/simonw/llm-bedrock)** adds support for Nova by Amazon via Amazon Bedrock.
