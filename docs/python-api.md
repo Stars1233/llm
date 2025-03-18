@@ -13,11 +13,19 @@ To run a prompt against the `gpt-4o-mini` model, run this:
 import llm
 
 model = llm.get_model("gpt-4o-mini")
-# Optional, you can configure the key in other ways:
-model.key = "sk-..."
-response = model.prompt("Five surprising names for a pet pelican")
+# key= is optional, you can configure the key in other ways
+response = model.prompt(
+    "Five surprising names for a pet pelican",
+    key="sk-..."
+)
 print(response.text())
 ```
+Note that the prompt will not be evaluated until you call that `response.text()` method - a form of lazy loading.
+
+If you inspect the response before it has been evaluated it will look like this:
+
+    <Response prompt='Your prompt' text='... not yet done ...'>
+
 The `llm.get_model()` function accepts model IDs or aliases. You can also omit it to use the currently configured default model, which is `gpt-4o-mini` if you have not changed the default.
 
 In this example the key is set by Python code. You can also provide the key using the `OPENAI_API_KEY` environment variable, or use the `llm keys set openai` command to store it in a `keys.json` file, see {ref}`api-keys`.
@@ -83,6 +91,57 @@ if "image/jpeg" in model.attachment_types:
     ...
 ```
 
+(python-api-schemas)=
+
+### Schemas
+
+As with {ref}`the CLI tool <usage-schemas>` some models support passing a JSON schema should be used for the resulting response.
+
+You can pass this to the `prompt(schema=)` parameter as either a Python dictionary or a [Pydantic](https://docs.pydantic.dev/) `BaseModel` subclass:
+
+```python
+import llm, json
+from pydantic import BaseModel
+
+class Dog(BaseModel):
+    name: str
+    age: int
+
+model = llm.get_model("gpt-4o-mini")
+response = model.prompt("Describe a nice dog", schema=Dog)
+dog = json.loads(response.text())
+print(dog)
+# {"name":"Buddy","age":3}
+```
+You can also pass a schema directly, like this:
+```python
+response = model.prompt("Describe a nice dog", schema={
+    "properties": {
+        "name": {"title": "Name", "type": "string"},
+        "age": {"title": "Age", "type": "integer"},
+    },
+    "required": ["name", "age"],
+    "title": "Dog",
+    "type": "object",
+})
+```
+
+You can also use LLM's {ref}`alternative schema syntax <schemas-dsl>` via the `llm.schema_dsl(schema_dsl)` function. This provides a quick way to construct a JSON schema for simple cases:
+
+```python
+print(model.prompt(
+    "Describe a nice dog with a surprising name",
+    schema=llm.schema_dsl("name, age int, bio")
+))
+```
+Pass `multi=True` to generate a schema that returns multiple items matching that specification:
+
+```python
+print(model.prompt(
+    "Describe 3 nice dogs with surprising names",
+    schema=llm.schema_dsl("name, age int, bio", multi=True)
+))
+```
 (python-api-model-options)=
 
 ### Model options
@@ -93,6 +152,21 @@ For models that support options (view those with `llm models --options`) you can
 model = llm.get_model()
 print(model.prompt("Names for otters", temperature=0.2))
 ```
+
+(python-api-models-api-keys)=
+
+### Passing an API key
+
+Models that accept API keys should take an additional `key=` parameter to their `model.prompt()` method:
+
+```python
+model = llm.get_model("gpt-4o-mini")
+print(model.prompt("Names for beavers", key="sk-..."))
+```
+
+If you don't provide this argument LLM will attempt to find it from an environment variable (`OPENAI_API_KEY` for OpenAI, others for different plugins) or from keys that have been saved using the {ref}`llm keys set <api-keys>` command.
+
+Some model plugins may not yet have been upgraded to handle the `key=` parameter, in which case you will need to use one of the other mechanisms.
 
 (python-api-models-from-plugins)=
 
@@ -192,26 +266,6 @@ The `response.text()` method described earlier does this for you - it runs throu
 
 If a response has been evaluated, `response.text()` will continue to return the same string.
 
-(python-api-listing-models)=
-
-## Listing models
-
-The `llm.get_models()` list returns a list of all available models, including those from plugins.
-
-```python
-import llm
-
-for model in llm.get_models():
-    print(model.model_id)
-```
-
-Use `llm.get_async_models()` to list async models:
-
-```python
-for model in llm.get_async_models():
-    print(model.model_id)
-```
-
 (python-api-async)=
 
 ## Async models
@@ -239,6 +293,7 @@ async for chunk in model.prompt(
 ):
     print(chunk, end="", flush=True)
 ```
+This `await model.prompt()` method takes the same arguments as the synchronous `model.prompt()` method, for options and attachments and `key=` and suchlike.
 
 (python-api-conversations)=
 
@@ -276,6 +331,26 @@ response = conversation.prompt(
 ```
 
 Access `conversation.responses` for a list of all of the responses that have so far been returned during the conversation.
+
+(python-api-listing-models)=
+
+## Listing models
+
+The `llm.get_models()` list returns a list of all available models, including those from plugins.
+
+```python
+import llm
+
+for model in llm.get_models():
+    print(model.model_id)
+```
+
+Use `llm.get_async_models()` to list async models:
+
+```python
+for model in llm.get_async_models():
+    print(model.model_id)
+```
 
 (python-api-response-on-done)=
 
