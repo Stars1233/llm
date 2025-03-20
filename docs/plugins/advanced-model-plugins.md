@@ -1,9 +1,42 @@
 (advanced-model-plugins)=
 # Advanced model plugins
 
-The {ref}`model plugin tutorial <tutorial-model-plugin>` covers the basics of developing a plugin that adds support for a new model.
+The {ref}`model plugin tutorial <tutorial-model-plugin>` covers the basics of developing a plugin that adds support for a new model. This document covers more advanced topics.
 
-This document covers more advanced topics.
+Features to consider for your model plugin include:
+
+- {ref}`Accepting API keys <advanced-model-plugins-api-keys>` using the standard mechanism that incorporates `llm keys set`, environment variables and support for passing an explicit key to the model.
+- Including support for {ref}`Async models <advanced-model-plugins-async>` that can be used with Python's `asyncio` library.
+- Support for {ref}`structured output <advanced-model-plugins-schemas>` using JSON schemas.
+- Handling {ref}`attachments <advanced-model-plugins-attachments>` (images, audio and more) for multi-modal models.
+- Tracking {ref}`token usage <advanced-model-plugins-usage>` for models that charge by the token.
+
+(advanced-model-plugins-api-keys)=
+
+## Models that accept API keys
+
+Models that call out to API providers such as OpenAI, Anthropic or Google Gemini usually require an API key.
+
+LLM's API key management mechanism {ref}`is described here <api-keys>`.
+
+If your plugin requires an API key you should subclass the `llm.KeyModel` class instead of the `llm.Model` class. Start your model definition like this:
+
+```python
+import llm
+
+class HostedModel(llm.KeyModel):
+    needs_key = "hosted" # Required
+    key_env_var = "HOSTED_API_KEY" # Optional
+```
+This tells LLM that your model requires an API key, which may be saved in the key registry under the key name `hosted` or might also be provided as the `HOSTED_API_KEY` environment variable.
+
+Then when you define your `execute()` method it should take an extra `key=` parameter like this:
+
+```python
+    def execute(self, prompt, stream, response, conversation, key=None):
+        # key= here will be the API key to use
+```
+LLM will pass in the key from the environment variable, key registry or that has been passed to LLM as the `--key` command-line option or the `model.prompt(..., key=)` parameter.
 
 (advanced-model-plugins-async)=
 
@@ -15,13 +48,12 @@ The async version of a model subclasses `llm.AsyncModel` instead of `llm.Model`.
 
 This example shows a subset of the OpenAI default plugin illustrating how this method might work:
 
-
 ```python
 from typing import AsyncGenerator
 import llm
 
 class MyAsyncModel(llm.AsyncModel):
-    # This cn duplicate the model_id of the sync model:
+    # This can duplicate the model_id of the sync model:
     model_id = "my-model-id"
 
     async def execute(
@@ -43,6 +75,17 @@ class MyAsyncModel(llm.AsyncModel):
             )
             yield completion.choices[0].message.content
 ```
+If your model takes an API key you should instead subclass `llm.AsyncKeyModel` and have a `key=` parameter on your `.execute()` method:
+
+```python
+class MyAsyncModel(llm.AsyncKeyModel):
+    ...
+    async def execute(
+        self, prompt, stream, response, conversation=None, key=None
+    ) -> AsyncGenerator[str, None]:
+```
+
+
 This async model instance should then be passed to the `register()` method in the `register_models()` plugin hook:
 
 ```python
@@ -52,6 +95,23 @@ def register_models(register):
         MyModel(), MyAsyncModel(), aliases=("my-model-aliases",)
     )
 ```
+
+(advanced-model-plugins-schemas)=
+
+## Supporting schemas
+
+If your model supports {ref}`structured output <schemas>` against a defined JSON schema you can implement support by first adding `supports_schema = True` to the class:
+
+```python
+class MyModel(llm.KeyModel):
+    ...
+    support_schema = True
+```
+And then adding code to your `.execute()` method that checks for `prompt.schema` and, if it is present, uses that to prompt the model.
+
+`prompt.schema` will always be a Python dictionary representing a JSON schema, even if the user passed in a Pydantic model class.
+
+Check the [llm-gemini](https://github.com/simonw/llm-gemini) and [llm-anthropic](https://github.com/simonw/llm-anthropic) plugins for example of this pattern in action.
 
 (advanced-model-plugins-attachments)=
 
