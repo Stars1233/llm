@@ -1,5 +1,263 @@
 # Changelog
 
+(v0_26_a1)=
+## 0.26a1 (2025-05-25)
+
+Hopefully the last alpha before a stable release that includes tool support.
+
+### Features
+
+*   **Plugin-provided tools can now be grouped into "Toolboxes".**
+    *   Toolboxes (`llm.Toolbox` classes) allow plugins to expose multiple related tools that share state or configuration (e.g., a `Memory` tool or `Filesystem` tool). ([#1059](https://github.com/simonw/llm/issues/1059), [#1086](https://github.com/simonw/llm/issues/1086))
+*   **Tool support for `llm chat`.**
+    *   The `llm chat` command now accepts `--tool` and `--functions` arguments, allowing interactive chat sessions to use tools. ([#1004](https://github.com/simonw/llm/issues/1004), [#1062](https://github.com/simonw/llm/issues/1062))
+*   **Tools can now execute asynchronously.**
+    *   Models that implement `AsyncModel` can now run tools, including tool functions defined as `async def`. ([#1063](https://github.com/simonw/llm/issues/1063))
+*   **`llm chat` now supports adding fragments during a session.**
+    *   Use the new `!fragment <id>` command while chatting to insert content from a fragment. Initial fragments can also be passed to `llm chat` using `-f` or `--sf`. Thanks, [Dan Turkel](https://github.com/daturkel). ([#1044](https://github.com/simonw/llm/issues/1044), [#1048](https://github.com/simonw/llm/issues/1048))
+*   **Filter `llm logs` by tools.**
+    *   New `--tool <name>` option to filter logs to show only responses that involved a specific tool (e.g., `--tool simple_eval`).
+    *   The `--tools` flag shows all responses that used any tool. ([#1013](https://github.com/simonw/llm/issues/1013), [#1072](https://github.com/simonw/llm/issues/1072))
+*   **`llm schemas list` can output JSON.**
+    *   Added `--json` and `--nl` (newline-delimited JSON) options to `llm schemas list` for programmatic access to saved schema definitions. ([#1070](https://github.com/simonw/llm/issues/1070))
+*   **Filter `llm similar` results by ID prefix.**
+    *   The new `--prefix` option for `llm similar` allows searching for similar items only within IDs that start with a specified string (e.g., `llm similar my-collection --prefix 'docs/'`). Thanks, [Dan Turkel](https://github.com/daturkel). ([#1052](https://github.com/simonw/llm/issues/1052))
+*   **Control chained tool execution limit.**
+    *   New `--chain-limit <N>` (or `--cl`) option for `llm prompt` and `llm chat` to specify the maximum number of consecutive tool calls allowed for a single prompt. Defaults to 5; set to 0 for unlimited. ([#1025](https://github.com/simonw/llm/issues/1025))
+*   **`llm plugins --hook <NAME>` option.**
+    *   Filter the list of installed plugins to only show those that implement a specific plugin hook. ([#1047](https://github.com/simonw/llm/issues/1047))
+* `llm tools list` now shows toolboxes and their methods. ([#1013](https://github.com/simonw/llm/issues/1013))
+* `llm prompt` and `llm chat` now automatically re-enable plugin-provided tools when continuing a conversation (`-c` or `--cid`). ([#1020](https://github.com/simonw/llm/issues/1020))
+* The `--tools-debug` option now pretty-prints JSON tool results for improved readability. ([#1083](https://github.com/simonw/llm/issues/1083))
+* New `LLM_TOOLS_DEBUG` environment variable to permanently enable `--tools-debug`. ([#1045](https://github.com/simonw/llm/issues/1045))
+* `llm chat` sessions now correctly respect default model options configured with `llm models set-options`. Thanks, [André Arko](https://github.com/indirect). ([#985](https://github.com/simonw/llm/issues/985))
+* New `--pre` option for `llm install` to allow installing pre-release packages. ([#1060](https://github.com/simonw/llm/issues/1060))
+* OpenAI models (`gpt-4o`, `gpt-4o-mini`) now explicitly declare support for tools and vision. ([#1037](https://github.com/simonw/llm/issues/1037))
+* The `supports_tools` parameter is now supported in `extra-openai-models.yaml`. Thanks, [Mahesh Hegde ](https://github.com/mahesh-hegde). ([#1068](https://github.com/simonw/llm/issues/1068))
+
+### Bug fixes
+
+*   Fixed a bug where the `name` parameter in `register(function, name="name")` was ignored for tool plugins. ([#1032](https://github.com/simonw/llm/issues/1032))
+*   Ensure `pathlib.Path` objects are cast to `str` before passing to `click.edit` in `llm templates edit`. Thanks, [Abizer Lokhandwala](https://github.com/abizer). ([#1031](https://github.com/simonw/llm/issues/1031))
+
+
+(v0_26_a0)=
+## 0.26a0 (2025-05-13)
+
+This is the first alpha to introduce {ref}`support for tools<tools>`! Models with tool capability (which includes the default OpenAI model family) can now be granted access to execute Python functions as part of responding to a prompt.
+
+Tools are supported by {ref}`the command-line interface <usage-tools>`:
+
+```bash
+llm --functions '
+def multiply(x: int, y: int) -> int:
+    """Multiply two numbers."""
+    return x * y
+' 'what is 34234 * 213345'
+```
+And in {ref}`the Python API <python-api-tools>`, using a new `model.chain()` method for executing multiple prompts in a sequence:
+```python
+import llm
+
+def multiply(x: int, y: int) -> int:
+    """Multiply two numbers."""
+    return x * y
+
+model = llm.get_model("gpt-4.1-mini")
+response = model.chain(
+    "What is 34234 * 213345?",
+    tools=[multiply]
+)
+print(response.text())
+```
+New tools can also be defined using the {ref}`register_tools() plugin hook <plugin-hooks-register-tools>`. They can then be called by name from the command-line like this:
+```bash
+llm -T multiply 'What is 34234 * 213345?'
+```
+Tool support is currently under **active development**. Consult [this milestone](https://github.com/simonw/llm/milestone/12) for the latest status.
+
+(v0_25)=
+## 0.25 (2025-05-04)
+
+- New plugin feature: {ref}`plugin-hooks-register-fragment-loaders` plugins can now return a mixture of fragments and attachments. The [llm-video-frames](https://github.com/simonw/llm-video-frames) plugin is the first to take advantage of this mechanism. [#972](https://github.com/simonw/llm/issues/972)
+- New OpenAI models: `gpt-4.1`, `gpt-4.1-mini`, `gpt-41-nano`, `o3`, `o4-mini`. [#945](https://github.com/simonw/llm/issues/945), [#965](https://github.com/simonw/llm/issues/965), [#976](https://github.com/simonw/llm/issues/976).
+- New environment variables: `LLM_MODEL` and `LLM_EMBEDDING_MODEL` for setting the model to use without needing to specify `-m model_id` every time. [#932](https://github.com/simonw/llm/issues/932)
+- New command: `llm fragments loaders`, to list all currently available fragment loader prefixes provided by plugins. [#941](https://github.com/simonw/llm/issues/941)
+- `llm fragments` command now shows fragments ordered by the date they were first used. [#973](https://github.com/simonw/llm/issues/973)
+- `llm chat` now includes a `!edit` command for editing a prompt using your default terminal text editor. Thanks, [Benedikt Willi](https://github.com/Hopiu). [#969](https://github.com/simonw/llm/pull/969)
+- Allow `-t` and `--system` to be used at the same time. [#916](https://github.com/simonw/llm/issues/916)
+- Fixed a bug where accessing a model via its alias would fail to respect any default options set for that model. [#968](https://github.com/simonw/llm/issues/968)
+- Improved documentation for {ref}`extra-openai-models.yaml <openai-compatible-models>`. Thanks, [Rahim Nathwani](https://github.com/rahimnathwani) and [Dan Guido](https://github.com/dguido). [#950](https://github.com/simonw/llm/pull/950), [#957](https://github.com/simonw/llm/pull/957)
+- `llm -c/--continue` now works correctly with the `-d/--database` option. `llm chat` now accepts that `-d/--database` option. Thanks, [Sukhbinder Singh](https://github.com/sukhbinder). [#933](https://github.com/simonw/llm/issues/933)
+
+(v0_25a0)=
+## 0.25a0 (2025-04-10)
+
+- `llm models --options` now shows keys and environment variables for models that use API keys. Thanks, [Steve Morin](https://github.com/smorin). [#903](https://github.com/simonw/llm/issues/903)
+- Added `py.typed` marker file so LLM can now be used as a dependency in projects that use `mypy` without a warning. [#887](https://github.com/simonw/llm/issues/887)
+- `$` characters can now be used in templates by escaping them as `$$`. Thanks, [@guspix](https://github.com/guspix). [#904](https://github.com/simonw/llm/issues/904)
+- LLM now uses `pyproject.toml` instead of `setup.py`. [#908](https://github.com/simonw/llm/issues/908)
+
+(v0_24_2)=
+## 0.24.2 (2025-04-08)
+
+- Fixed a bug on Windows with the new `llm -t path/to/file.yaml` feature. [#901](https://github.com/simonw/llm/issues/901)
+
+(v0_24_1)=
+## 0.24.1 (2025-04-08)
+
+- Templates can now be specified as a path to a file on disk, using `llm -t path/to/file.yaml`. This makes them consistent with how `-f` fragments are loaded. [#897](https://github.com/simonw/llm/issues/897)
+- `llm logs backup /tmp/backup.db` command for {ref}`backing up your <logging-backup>` `logs.db` database. [#879](https://github.com/simonw/llm/issues/879)
+
+(v0_24)=
+## 0.24 (2025-04-07)
+
+Support for **fragments** to help assemble prompts for long context models. Improved support for **templates** to support attachments and fragments. New plugin hooks for providing custom loaders for both templates and fragments. See [Long context support in LLM 0.24 using fragments and template plugins](https://simonwillison.net/2025/Apr/7/long-context-llm/) for more on this release.
+
+The new [llm-docs](https://github.com/simonw/llm-docs) plugin demonstrates these new features. Install it like this:
+
+```bash
+llm install llm-docs
+```
+Now you can ask questions of the LLM documentation like this:
+
+```bash
+llm -f docs: 'How do I save a new template?'
+```
+The `docs:` prefix is registered by the plugin. The plugin fetches the LLM documentation for your installed version (from the [docs-for-llms](https://github.com/simonw/docs-for-llms) repository) and uses that as a prompt fragment to help answer your question.
+
+Two more new plugins are [llm-templates-github](https://github.com/simonw/llm-templates-github) and [llm-templates-fabric](https://github.com/simonw/llm-templates-fabric).
+
+`llm-templates-github` lets you share and use templates on GitHub. You can run my [Pelican riding a bicycle](https://simonwillison.net/tags/pelican-riding-a-bicycle/) benchmark against a model like this:
+
+```bash
+llm install llm-templates-github
+llm -t gh:simonw/pelican-svg -m o3-mini
+```
+This executes [this pelican-svg.yaml](https://github.com/simonw/llm-templates/blob/main/pelican-svg.yaml) template stored in my [simonw/llm-templates](https://github.com/simonw/llm-templates) repository, using a new repository naming convention.
+
+To share your own templates, create a repository on GitHub under your user account called `llm-templates` and start saving `.yaml` files to it.
+
+[llm-templates-fabric](https://github.com/simonw/llm-templates-fabric) provides a similar mechanism for loading templates from  Daniel Miessler's [fabric collection](https://github.com/danielmiessler/fabric):
+
+```bash
+llm install llm-templates-fabric
+curl https://simonwillison.net/2025/Apr/6/only-miffy/ | \
+  llm -t f:extract_main_idea
+```
+
+Major new features:
+
+- New {ref}`fragments feature <fragments>`. Fragments can be used to assemble long prompts from multiple existing pieces - URLs, file paths or previously used fragments. These will be stored de-duplicated in the database avoiding wasting space storing multiple long context pieces. Example usage: `llm -f https://llm.datasette.io/robots.txt 'explain this file'`. [#617](https://github.com/simonw/llm/issues/617)
+- The `llm logs` file now accepts `-f` fragment references too, and will show just logged prompts that used those fragments.
+- {ref}`register_template_loaders() plugin hook <plugin-hooks-register-template-loaders>` allowing plugins to register new `prefix:value` custom template loaders. [#809](https://github.com/simonw/llm/issues/809)
+- {ref}`register_fragment_loaders() plugin hook <plugin-hooks-register-fragment-loaders>` allowing plugins to register new `prefix:value` custom fragment loaders. [#886](https://github.com/simonw/llm/issues/886)
+- {ref}`llm fragments <fragments-browsing>` family of commands for browsing fragments that have been previously logged to the database.
+- The new [llm-openai plugin](https://github.com/simonw/llm-openai-plugin) provides support for **o1-pro** (which is not supported by the OpenAI mechanism used by LLM core). Future OpenAI features will migrate to this plugin instead of LLM core itself.
+
+Improvements to templates:
+
+- `llm -t $URL` option can now take a URL to a YAML template. [#856](https://github.com/simonw/llm/issues/856)
+- Templates can now store default model options. [#845](https://github.com/simonw/llm/issues/845)
+- Executing a template that does not use the `$input` variable no longer blocks LLM waiting for input, so prompt templates can now be used to try different models using `llm -t pelican-svg -m model_id`. [#835](https://github.com/simonw/llm/issues/835)
+- `llm templates` command no longer crashes if one of the listed template files contains invalid YAML. [#880](https://github.com/simonw/llm/issues/880)
+- Attachments can now be stored in templates. [#826](https://github.com/simonw/llm/issues/826)
+
+Other changes:
+
+- New {ref}`llm models options <usage-executing-default-options>` family of commands for setting default options for particular models. [#829](https://github.com/simonw/llm/issues/829)
+- `llm logs list`, `llm schemas list` and `llm schemas show` all now take a `-d/--database` option with an optional path to a SQLite database. They used to take `-p/--path` but that was inconsistent with other commands. `-p/--path` still works but is excluded from `--help` and will be removed in a future LLM release. [#857](https://github.com/simonw/llm/issues/857)
+- `llm logs -e/--expand` option for expanding fragments. [#881](https://github.com/simonw/llm/issues/881)
+- `llm prompt -d path-to-sqlite.db` option can now be used to write logs to a custom SQLite database. [#858](https://github.com/simonw/llm/issues/858)
+- `llm similar -p/--plain` option providing more human-readable output than the default JSON. [#853](https://github.com/simonw/llm/issues/853)
+- `llm logs -s/--short` now truncates to include the end of the prompt too. Thanks, [Sukhbinder Singh](https://github.com/sukhbinder). [#759](https://github.com/simonw/llm/issues/759)
+- Set the `LLM_RAISE_ERRORS=1` environment variable to raise errors during prompts rather than suppressing them, which means you can run `python -i -m llm 'prompt'` and then drop into a debugger on errors with `import pdb; pdb.pm()`. [#817](https://github.com/simonw/llm/issues/817)
+- Improved [--help output](https://llm.datasette.io/en/stable/help.html#llm-embed-multi-help) for `llm embed-multi`. [#824](https://github.com/simonw/llm/issues/824)
+- `llm models -m X` option which can be passed multiple times with model IDs to see the details of just those models. [#825](https://github.com/simonw/llm/issues/825)
+- OpenAI models now accept PDF attachments. [#834](https://github.com/simonw/llm/issues/834)
+- `llm prompt -q gpt -q 4o` option - pass `-q searchterm` one or more times to execute a prompt against the first model that matches all of those strings - useful for if you can't remember the full model ID. [#841](https://github.com/simonw/llm/issues/841)
+- {ref}`OpenAI compatible models <openai-compatible-models>` configured using `extra-openai-models.yaml` now support `supports_schema: true`, `vision: true` and `audio: true` options. Thanks [@adaitche](https://github.com/adaitche) and [@giuli007](https://github.com/giuli007). [#819](https://github.com/simonw/llm/pull/819), [#843](https://github.com/simonw/llm/pull/843)
+
+
+(v0_24a1)=
+## 0.24a1 (2025-04-06)
+
+- New Fragments feature. [#617](https://github.com/simonw/llm/issues/617)
+- `register_fragment_loaders()` plugin hook. [#809](https://github.com/simonw/llm/issues/886)
+
+(v0_24a0)=
+## 0.24a0 (2025-02-28)
+
+- Alpha release with experimental `register_template_loaders()` plugin hook. [#809](https://github.com/simonw/llm/issues/809)
+
+(v0_23)=
+## 0.23 (2025-02-28)
+
+Support for **schemas**, for getting supported models to output JSON that matches a specified JSON schema. See also [Structured data extraction from unstructured content using LLM schemas](https://simonwillison.net/2025/Feb/28/llm-schemas/) for background on this feature. [#776](https://github.com/simonw/llm/issues/776)
+
+- New `llm prompt --schema '{JSON schema goes here}` option for specifying a schema that should be used for the output from the model. The {ref}`schemas documentation <schemas>` has more details and a tutorial.
+- Schemas can also be defined using a {ref}`concise schema specification <schemas-dsl>`, for example `llm prompt --schema 'name, bio, age int'`. [#790](https://github.com/simonw/llm/issues/790)
+- Schemas can also be specified by passing a filename and through {ref}`several other methods <schemas-specify>`. [#780](https://github.com/simonw/llm/issues/780)
+- New {ref}`llm schemas family of commands <help-schemas>`: `llm schemas list`, `llm schemas show`, and `llm schemas dsl` for debugging the new concise schema language. [#781](https://github.com/simonw/llm/issues/781)
+- Schemas can now be saved to templates using `llm --schema X --save template-name` or through modifying the {ref}`template YAML <prompt-templates-yaml>`. [#778](https://github.com/simonw/llm/issues/778)
+- The {ref}`llm logs <logging>` command now has new options for extracting data collected using schemas: `--data`, `--data-key`, `--data-array`, `--data-ids`. [#782](https://github.com/simonw/llm/issues/782)
+- New `llm logs --id-gt X` and `--id-gte X` options. [#801](https://github.com/simonw/llm/issues/801)
+- New `llm models --schemas` option for listing models that support schemas. [#797](https://github.com/simonw/llm/issues/797)
+- `model.prompt(..., schema={...})` parameter for specifying a schema from Python. This accepts either a dictionary JSON schema definition or a Pydantic `BaseModel` subclass, see {ref}`schemas in the Python API docs <python-api-schemas>`.
+- The default OpenAI plugin now enables schemas across all supported models. Run `llm models --schemas` for a list of these.
+- The [llm-anthropic](https://github.com/simonw/llm-anthropic) and [llm-gemini](https://github.com/simonw/llm-gemini) plugins have been upgraded to add schema support for those models. Here's documentation on how to {ref}`add schema support to a model plugin <advanced-model-plugins-schemas>`.
+
+Other smaller changes:
+
+- [GPT-4.5 preview](https://openai.com/index/introducing-gpt-4-5/) is now a supported model: `llm -m gpt-4.5 'a joke about a pelican and a wolf'` [#795](https://github.com/simonw/llm/issues/795)
+- The prompt string is now optional when calling `model.prompt()` from the Python API, so `model.prompt(attachments=llm.Attachment(url=url)))` now works. [#784](https://github.com/simonw/llm/issues/784)
+- `extra-openai-models.yaml` now supports a `reasoning: true` option. Thanks, [Kasper Primdal Lauritzen](https://github.com/KPLauritzen). [#766](https://github.com/simonw/llm/pull/766)
+- LLM now depends on Pydantic v2 or higher. Pydantic v1 is no longer supported. [#520](https://github.com/simonw/llm/issues/520)
+
+
+(v0_22)=
+## 0.22 (2025-02-16)
+
+See also [LLM 0.22, the annotated release notes](https://simonwillison.net/2025/Feb/17/llm/).
+
+- Plugins that provide models that use API keys can now subclass the new `llm.KeyModel` and `llm.AsyncKeyModel` classes. This results in the API key being passed as a new `key` parameter to their `.execute()` methods, and means that Python users can pass a key as the `model.prompt(..., key=)` - see {ref}`Passing an API key <python-api-models-api-keys>`. Plugin developers should consult the new documentation on writing {ref}`Models that accept API keys <advanced-model-plugins-api-keys>`. [#744](https://github.com/simonw/llm/issues/744)
+- New OpenAI model: `chatgpt-4o-latest`. This model ID accesses the current model being used to power ChatGPT, which can change without warning. [#752](https://github.com/simonw/llm/issues/752)
+- New `llm logs -s/--short` flag, which returns a greatly shortened version of the matching log entries in YAML format with a truncated prompt and without including the response. [#737](https://github.com/simonw/llm/issues/737)
+- Both `llm models` and `llm embed-models` now take multiple `-q` search fragments. You can now search for all models matching "gemini" and "exp" using `llm models -q gemini -q exp`. [#748](https://github.com/simonw/llm/issues/748)
+- New `llm embed-multi --prepend X` option for prepending a string to each value before it is embedded - useful for models such as [nomic-embed-text-v2-moe](https://huggingface.co/nomic-ai/nomic-embed-text-v2-moe) that require passages to start with a string like `"search_document: "`. [#745](https://github.com/simonw/llm/issues/745)
+- The `response.json()` and `response.usage()` methods are {ref}`now documented <python-api-underlying-json>`.
+- Fixed a bug where conversations that were loaded from the database could not be continued using `asyncio` prompts. [#742](https://github.com/simonw/llm/issues/742)
+- New plugin for macOS users: [llm-mlx](https://github.com/simonw/llm-mlx), which provides [extremely high performance access](https://simonwillison.net/2025/Feb/15/llm-mlx/) to a wide range of local models using Apple's MLX framework.
+- The `llm-claude-3` plugin has been renamed to [llm-anthropic](https://github.com/simonw/llm-anthropic).
+
+(v0_21)=
+## 0.21 (2025-01-31)
+
+- New model: `o3-mini`. [#728](https://github.com/simonw/llm/issues/728)
+- The `o3-mini` and `o1` models now support a `reasoning_effort` option which can be set to `low`, `medium` or `high`.
+- `llm prompt` and `llm logs` now have a `--xl/--extract-last` option for extracting the last fenced code block in the response - a complement to the existing `--x/--extract` option. [#717](https://github.com/simonw/llm/issues/717)
+
+(v0_20)=
+## 0.20 (2025-01-22)
+
+- New model, `o1`. This model does not yet support streaming. [#676](https://github.com/simonw/llm/issues/676)
+- `o1-preview` and `o1-mini` models now support streaming.
+- New models, `gpt-4o-audio-preview` and `gpt-4o-mini-audio-preview`. [#677](https://github.com/simonw/llm/issues/677)
+- `llm prompt -x/--extract` option, which returns just the content of the first fenced code block in the response. Try `llm prompt -x 'Python function to reverse a string'`. [#681](https://github.com/simonw/llm/issues/681)
+  - Creating a template using `llm ... --save x` now supports the `-x/--extract` option, which is saved to the template. YAML templates can set this option using `extract: true`.
+  - New `llm logs -x/--extract` option extracts the first fenced code block from matching logged responses.
+- New `llm models -q 'search'` option returning models that case-insensitively match the search query. [#700](https://github.com/simonw/llm/issues/700)
+- Installation documentation now also includes `uv`. Thanks, [Ariel Marcus](https://github.com/ajmarcus). [#690](https://github.com/simonw/llm/pull/690) and [#702](https://github.com/simonw/llm/issues/702)
+- `llm models` command now shows the current default model at the bottom of the listing. Thanks, [Amjith Ramanujam](https://github.com/amjith). [#688](https://github.com/simonw/llm/pull/688)
+- {ref}`Plugin directory <plugin-directory>` now includes `llm-venice`, `llm-bedrock`, `llm-deepseek` and `llm-cmd-comp`.
+- Fixed bug where some dependency version combinations could cause a `Client.__init__() got an unexpected keyword argument 'proxies'` error. [#709](https://github.com/simonw/llm/issues/709)
+- OpenAI embedding models are now available using their full names of `text-embedding-ada-002`, `text-embedding-3-small` and `text-embedding-3-large` - the previous names are still supported as aliases. Thanks, [web-sst](https://github.com/web-sst). [#654](https://github.com/simonw/llm/pull/654)
+
+(v0_19_1)=
+## 0.19.1 (2024-12-05)
+
+- FIxed bug where `llm.get_models()` and `llm.get_async_models()` returned the same model multiple times. [#667](https://github.com/simonw/llm/issues/667)
+
 (v0_19)=
 ## 0.19 (2024-12-01)
 
@@ -251,6 +509,7 @@ This starts a chat session:
 ```
 Type 'exit' or 'quit' to exit
 Type '!multi' to enter multiple lines, then '!end' to finish
+Type '!edit' to open your default editor and modify the prompt.
 > Who are you?
 Hello! I'm just an AI, here to assist you with any questions you may have.
 My name is LLaMA, and I'm a large language model trained to provide helpful
@@ -368,7 +627,7 @@ There's also a new {ref}`llm.Collection <embeddings-python-collections>` class f
 - The output format for `llm logs` has changed. Previously it was JSON - it's now a much more readable Markdown format suitable for pasting into other documents. [#160](https://github.com/simonw/llm/issues/160)
   - The new `llm logs --json` option can be used to get the old JSON format.
   - Pass `llm logs --conversation ID` or `--cid ID` to see the full logs for a specific conversation.
-- You can now combine piped input and a prompt in a single command: `cat script.py | llm 'explain this code'`. This works even for models that do not support {ref}`system prompts <system-prompts>`. [#153](https://github.com/simonw/llm/issues/153)
+- You can now combine piped input and a prompt in a single command: `cat script.py | llm 'explain this code'`. This works even for models that do not support {ref}`system prompts <usage-system-prompts>`. [#153](https://github.com/simonw/llm/issues/153)
 - Additional {ref}`openai-compatible-models` can now be configured with custom HTTP headers. This enables platforms such as [openrouter.ai](https://openrouter.ai/) to be used with LLM, which can provide Claude access even without an Anthropic API key.
 - Keys set in `keys.json` are now used in preference to environment variables. [#158](https://github.com/simonw/llm/issues/158)
 - The documentation now includes a {ref}`plugin directory <plugin-directory>` listing all available plugins for LLM. [#173](https://github.com/simonw/llm/issues/173)
@@ -424,7 +683,7 @@ Use `llm aliases list` to see a list of aliases and `llm aliases remove turbo` t
 - Models hosted on [Replicate](https://replicate.com/) can now be accessed using the [llm-replicate](https://github.com/simonw/llm-replicate) plugin, including the new Llama 2 model from Meta AI. More details here: [Accessing Llama 2 from the command-line with the llm-replicate plugin](https://simonwillison.net/2023/Jul/18/accessing-llama-2/).
 - Model providers that expose an API that is compatible with the OpenAPI API format, including self-hosted model servers such as [LocalAI](https://github.com/go-skynet/LocalAI), can now be accessed using {ref}`additional configuration <openai-compatible-models>` for the default OpenAI plugin. [#106](https://github.com/simonw/llm/issues/106)
 - OpenAI models that are not yet supported by LLM can also {ref}`be configured <openai-extra-models>` using the new `extra-openai-models.yaml` configuration file. [#107](https://github.com/simonw/llm/issues/107)
-- The {ref}`llm logs command <viewing-logs>` now accepts a `-m model_id` option to filter logs to a specific model. Aliases can be used here in addition to model IDs. [#108](https://github.com/simonw/llm/issues/108)
+- The {ref}`llm logs command <logging-view>` now accepts a `-m model_id` option to filter logs to a specific model. Aliases can be used here in addition to model IDs. [#108](https://github.com/simonw/llm/issues/108)
 - Logs now have a SQLite full-text search index against their prompts and responses, and the `llm logs -q SEARCH` option can be used to return logs that match a search term. [#109](https://github.com/simonw/llm/issues/109)
 
 (v0_5)=
